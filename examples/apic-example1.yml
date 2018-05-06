@@ -1,0 +1,131 @@
+---
+$schema: "https://api-c.org/schema/jd4/v1.json#"
+version: '1.0.0'
+info: { title: 'My JSON API' }
+expect:
+  # Expect a HTTP request
+  { $ref: "https://api-c.org/schema/js-d4/http1/v1/request.json#" }
+promise:
+  # Promise a HTTP response
+  { $ref: "https://api-c.org/schema/js-d4/http1/v1/response.json#" }
+panic:
+  # Promise a HTTP 500 response if the server panics
+  allOf:
+   - { $ref: "https://api-c.org/schema/js-d4/http1/v1/response.json#" }
+   - properties: { status: { enum: [ 500 ] } }
+
+definitions:
+  # API object model
+  My:
+    Namespace:
+      Object:
+        type: object
+        properties:
+          id: { type: integer }
+          name: { type: string }
+
+  # Extracted clauses for readability and re-use (arbitrary structure)
+  Clauses:
+     MethodNotAllowed:
+       description: Method not allowed
+       promise: { properties: { status: { enum: [ 405 ] } } }
+
+    ValidationFailedPromise:
+      id: 'validationFailed'
+      description: Input validation failure
+      promise:
+        allOf:
+         - { $ref: "https://api-c.org/schema/js-d4/error/json-x-problem.json#" }
+         - { properties: { status: { enum: [ 400 ] } } }
+
+   Endpoints:
+     MyObject:
+
+       Create:
+         id: 'create' # Endpoint ID
+         description: Create a new object, promise an object with populated ID
+         expect: { properties: { method: { enum: [ POST ] } } }
+         clauses:
+           createObject:
+             expect: { body: { $ref: "definitions/My/Namespace/Object" } }
+             promise:
+                status: { enum: [ 201 ] }
+                body:
+                  allOf:
+                    - { $ref: "definitions/My/Namespace/Object" }
+                    - required: [ id ]
+                      properties:
+                        id: { type: integer, min: 1 }
+
+            validationFailed:
+              { $ref: "definitions/Clauses/ValidationFailedPromise" }
+
+       Query:
+         id: 'query' # Endpoint ID
+         description: Fetch a list of objects that satisfy a query
+         expect: { properties: { method: { enum: [ POST ] } } }
+         clauses:
+           executeSearchQuery:
+             expect:
+               properties:
+                 url:
+                   properties:
+                     query:
+                       properties:
+                         query: { type: string }
+                         pageSize: { type: integer, default: 250 }
+                         page: { type: integer, default: 1 }
+             promise:
+               properties:
+                 status: { enum: [ 200 ] }
+                 body:
+                   type: array
+                   items: { $ref: "definitions/My/Namespace/Object" }
+
+            validationFailed:
+              { $ref: "definitions/Clauses/ValidationFailedPromise" }
+
+clauses:
+  json:
+    description: Promise a JSON response, promise a application/problem+json response on server panic
+    expect: { $ref: "https://api-c.org/schema/js-d4/http1/v1/request/json.json#" }
+    promise: { $ref: "https://api-c.org/schema/js-d4/http1/v1/response/json.json#" }
+    panic: { $ref: "https://api-c.org/schema/js-d4/error/json-x-problem.json#" }
+    clauses:
+
+      myObject:
+        description: Expect a path starting with "/my-object"
+        expect: { properties: { url: { properties: { path: { pattern: '^/my-object' } } } } }
+        clauses:
+
+          jwtAuth:
+            description: Expect requests to have a JWT Authorization header
+            properties: { headers: { Authorization: { $ref: "https://api-c.org/schema/js-d4/auth/jwt-header.json#" } } }
+            clauses:
+
+              mightDenyAccess:
+                description: Keep option of returning a 401 response open
+                promise:
+                  oneOf: [ { properties: { status: { enum: [ 401 ] } } }, { not: { properties: { status: { enum: [ 401 ] } } } } ]
+                clauses:
+
+                  query:
+                    { $ref: "definitions/Endpoints/MyObject/Query" }
+
+                  create:
+                    { $ref: "definitions/Endpoints/MyObject/Create" }
+
+                  methodNotAllowed:
+                    { $ref: "definitions/Endpoints/MyObject/MethodNotAllowed" }
+
+          missingToken:
+            description: Authorization header was missing
+            promise: { properties: { status: { enum: [ 401 ] } } }
+
+      notFound:
+        description: Resource not found
+        promise: { properties: { status: { enum: [ 404 ] } } }
+
+  notAcceptable:
+    description: Promise a Not Acceptable response if sending a wrong Accept header
+    promise: { properties: { status: { enum: [ 406 ] } } }

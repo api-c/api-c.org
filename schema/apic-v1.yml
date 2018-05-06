@@ -1,0 +1,37 @@
+---
+id: "https://api-c.org/schema/apic-v1.json#"
+$schema: http://json-schema.org/draft-04/schema#
+description: API-C v1 Schema
+type: object
+required: [ $schema, clauses ]
+additionalProperties: false
+definitions:
+  Clauses:
+    type: object
+    patternProperties:
+      '^[a-zA-Z0-9]+$': { "$ref": '#/definitions/Clause' }
+  Clause:
+    type: object
+    properties:
+      id: { type: string }
+      description: { type: string }
+      expect: { "$ref": 'http://json-schema.org/draft-04/schema#' }
+      promise: { "$ref": 'http://json-schema.org/draft-04/schema#' }
+      panic: { "$ref": 'http://json-schema.org/draft-04/schema#' }
+      clauses: { "$ref": '#/definitions/Clauses' }
+  Definitions:
+    type: object
+    patternProperties:
+      '^[a-zA-Z0-9]+$':
+        oneOf:
+          - { "$ref": 'http://json-schema.org/draft-04/schema#' }
+          - { "$ref": '#/definitions/Definitions' }
+properties:
+  $schema: { type: string, enum: [ "https://api-c.org/schema/apic-v1.json#" ] }
+  info: { description: "Any informational API properties", type: object }
+  version: { description: "Semver version string", type: string, pattern: '^[0-9]+(\.[0-9]+)?(\.[0-9]+)?(\-[a-z0-9\-_]+)?$' }
+  expect: { "$ref": 'http://json-schema.org/draft-04/schema#' }
+  promise: { "$ref": 'http://json-schema.org/draft-04/schema#' }
+  panic: { "$ref": 'http://json-schema.org/draft-04/schema#' }
+  definitions: { "$ref": '#/definitions/Definitions' }
+  clauses: { "$ref": '#/definitions/Clauses' }
