@@ -6,13 +6,11 @@ expect:
   # Expect a HTTP request
   { $ref: "https://api-c.org/schema/js-d4/http1/v1/request.json#" }
 promise:
-  # Promise a HTTP response
-  { $ref: "https://api-c.org/schema/js-d4/http1/v1/response.json#" }
-panic:
-  # Promise a HTTP 500 response if the server panics
   allOf:
-   - { $ref: "https://api-c.org/schema/js-d4/http1/v1/response.json#" }
-   - properties: { status: { enum: [ 500 ] } }
+    # Promise a HTTP response
+    - { $ref: "https://api-c.org/schema/js-d4/http1/v1/response.json#" }
+    # Keep the option of returning a 500 response open
+    - { oneOf: [ { properties: { status: { enum: [ 500 ] } } }, { not: { properties: { status: { enum: [ 500 ] } } } } ] }
 
 definitions:
   # API object model
@@ -87,10 +85,12 @@ definitions:
 
 clauses:
   json:
-    description: Promise a JSON response, promise a application/problem+json response on server panic
+    description: Promise a application/json or application/problem+json response
     expect: { $ref: "https://api-c.org/schema/js-d4/http1/v1/request/json.json#" }
-    promise: { $ref: "https://api-c.org/schema/js-d4/http1/v1/response/json.json#" }
-    panic: { $ref: "https://api-c.org/schema/js-d4/error/json-x-problem.json#" }
+    promise:
+      oneOf:
+        - { $ref: "https://api-c.org/schema/js-d4/http1/v1/response/json.json#" }
+        - { $ref: "https://api-c.org/schema/js-d4/error/json-x-problem.json#" }
     clauses:
 
       myObject:

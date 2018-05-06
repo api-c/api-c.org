@@ -17,7 +17,6 @@ definitions:
       description: { type: string }
       expect: { "$ref": 'http://json-schema.org/draft-04/schema#' }
       promise: { "$ref": 'http://json-schema.org/draft-04/schema#' }
-      panic: { "$ref": 'http://json-schema.org/draft-04/schema#' }
       clauses: { "$ref": '#/definitions/Clauses' }
   Definitions:
     type: object
@@ -32,6 +31,5 @@ properties:
   version: { description: "Semver version string", type: string, pattern: '^[0-9]+(\.[0-9]+)?(\.[0-9]+)?(\-[a-z0-9\-_]+)?$' }
   expect: { "$ref": 'http://json-schema.org/draft-04/schema#' }
   promise: { "$ref": 'http://json-schema.org/draft-04/schema#' }
-  panic: { "$ref": 'http://json-schema.org/draft-04/schema#' }
   definitions: { "$ref": '#/definitions/Definitions' }
   clauses: { "$ref": '#/definitions/Clauses' }
